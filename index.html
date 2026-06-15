@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="theme-color" content="#00646e">
+  <title>SISIC Agent Web-App</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    :root {
+      --teal-900:#003f45;
+      --teal-800:#00515a;
+      --teal-700:#00646e;
+      --teal-600:#007c86;
+      --teal-100:#dff6f7;
+      --teal-050:#effafb;
+      --text:#102a2e;
+      --muted:#557377;
+      --line:#c7e5e7;
+      --surface:#ffffff;
+      --bg:#f4f8f9;
+      --ok:#0f7b47;
+      --safe:#005e6a;
+      --warn:#a06200;
+      --bad:#984b43;
+      --shadow:0 12px 28px rgba(0,0,0,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(180deg,var(--teal-050),var(--bg));color:var(--text)}
+    .shell{max-width:1180px;margin:0 auto;padding:28px 20px 56px}
+    .hero{display:grid;grid-template-columns:1.45fr 0.95fr;gap:16px;align-items:stretch;margin-bottom:20px}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .hero-main{padding:24px;background:linear-gradient(135deg,var(--teal-900),var(--teal-700));color:#fff;overflow:hidden;position:relative}
+    .hero-main::after{content:"";position:absolute;right:-60px;top:-40px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,#ffffff22 0,#ffffff0a 40%,transparent 70%)}
+    .hero-kicker{display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:8px 12px;border-radius:999px;background:#ffffff14;border:1px solid #ffffff22}
+    h1{margin:14px 0 10px;font-size:clamp(28px,4vw,42px);line-height:1.05}
+    .sub{margin:0;opacity:.92;line-height:1.5;max-width:58ch}
+    .status-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+    .status-pill,.info-pill{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:999px;font-size:13px;border:1px solid #ffffff22;background:#ffffff12;color:#fff}
+    .status-ok{background:#eaf7ef;border-color:#cfeadb;color:var(--ok)}
+    .status-err{background:#fff0ee;border-color:#f4d8d3;color:var(--bad)}
+    .hero-side{padding:22px}
+    .hero-side h2{margin:0;font-size:18px}
+    .mini-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+    .mini{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--teal-050)}
+    .mini strong{display:block;font-size:20px;color:var(--teal-800)}
+    .mini span{display:block;color:var(--muted);font-size:13px;margin-top:6px}
+    .footer-note{margin-top:16px;font-size:12px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1.08fr .92fr;gap:20px;align-items:start}
+    .panel{padding:22px}
+    .panel h2{margin:0 0 14px;font-size:20px}
+    .field{margin-bottom:15px}
+    .field label{display:block;font-weight:600;margin-bottom:6px;font-size:14px}
+    .req::after{content:" *";color:#b0302c}
+    input,textarea{width:100%;padding:14px 15px;border-radius:14px;border:1px solid var(--line);background:#fff;color:var(--text);font:inherit;outline:none;transition:border-color .15s, box-shadow .15s}
+    input:focus,textarea:focus{border-color:var(--teal-600);box-shadow:0 0 0 4px #007c8615}
+    textarea{min-height:116px;resize:vertical}
+    textarea::placeholder,input::placeholder{opacity:.58;font-style:italic}
+    .help{font-size:12px;color:var(--muted);margin-top:6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    button{appearance:none;border:0;border-radius:14px;padding:13px 16px;font:inherit;font-weight:700;cursor:pointer;transition:transform .04s ease,opacity .15s ease,background .15s ease,border-color .15s ease}
+    button:active{transform:translateY(1px)}
+    .primary{background:var(--teal-700);color:#fff}
+    .primary:hover{background:var(--teal-800)}
+    .secondary{background:#fff;border:1px solid var(--line);color:var(--text)}
+    .secondary:hover{background:var(--teal-050)}
+    .ghost{background:var(--teal-050);border:1px solid var(--line);color:var(--teal-800)}
+    .ghost:hover{background:#e6f6f7}
+    .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:999px;background:var(--teal-050);border:1px solid var(--line);font-size:13px}
+    .pill strong{color:var(--teal-800)}
+    .results-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+    .code{font-size:46px;font-weight:800;letter-spacing:.02em;color:var(--teal-900)}
+    .vertical{font-size:15px;color:var(--muted);margin-top:4px}
+    .reliability-card{padding:14px 16px;border-radius:16px;border:1px solid var(--line);min-width:230px;background:#fff}
+    .rel-top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+    .rel-top strong{font-size:28px;color:var(--teal-800)}
+    .score-bar{height:10px;border-radius:999px;background:#e6f1f2;overflow:hidden;margin-top:10px}
+    .score-bar > span{display:block;height:100%;background:linear-gradient(90deg,var(--teal-600),#15a3a8);border-radius:999px}
+    .label-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;font-weight:700;font-size:13px;cursor:help}
+    .label--sehr{background:#ebf8ef;color:var(--ok)}
+    .label--sicher{background:#eef8fb;color:var(--safe)}
+    .label--pruefen{background:#fff6e8;color:var(--warn)}
+    .label--unsicher{background:#fff0ee;color:var(--bad)}
+    .legend{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+    .legend .pill{cursor:help}
+    .result-section{margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:16px;background:#fff}
+    .result-section h3{margin:0 0 8px;font-size:16px}
+    .result-section p{margin:0;line-height:1.55}
+    .summary-box{background:linear-gradient(180deg,#fff,var(--teal-050));}
+    .summary-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .summary-text{line-height:1.6}
+    .alt-list{display:grid;gap:12px;margin-top:14px}
+    .alt{padding:14px;border-radius:16px;background:var(--teal-050);border:1px solid var(--line)}
+    .alt .alt-code{font-size:22px;font-weight:800;color:var(--teal-800)}
+    .muted{color:var(--muted)}
+    .empty{display:grid;place-items:center;min-height:246px;text-align:center;color:var(--muted);padding:26px;border:2px dashed var(--line);border-radius:18px;background:linear-gradient(180deg,#fff,var(--teal-050))}
+    .toast{position:fixed;right:18px;bottom:18px;background:var(--teal-900);color:#fff;padding:12px 16px;border-radius:12px;box-shadow:var(--shadow);opacity:0;transform:translateY(15px);pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+    .toast.show{opacity:1;transform:translateY(0)}
+    @media (max-width:980px){.hero,.grid{grid-template-columns:1fr}.reliability-card{min-width:unset;width:100%}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-main card">
+        <div class="hero-kicker">Phase 1 · MVP · Browser-only</div>
+        <h1>SISIC Agent Web-App</h1>
+        <p class="sub">Einzelabfrage direkt im Browser – ohne Server. Die App nutzt die aus <strong>SISIC_Agent_V7.9.xlsm</strong> generierten Daten und die JS-Scoring-Engine.</p>
+        <div class="status-row">
+          <div id="systemStatus" class="status-pill">Systemstatus wird geprüft …</div>
+          <div class="info-pill">Sales Boost Mini-Pack</div>
+        </div>
+      </div>
+      <aside class="hero-side card">
+        <h2>Datenbasis</h2>
+        <div class="mini-grid">
+          <div class="mini"><strong id="statKeywords">–</strong><span>Keyword-SISIC-Regeln</span></div>
+          <div class="mini"><strong id="statAliases">–</strong><span>Alias-Trigger</span></div>
+          <div class="mini"><strong id="statFallback">–</strong><span>Fallback-Keywords</span></div>
+          <div class="mini"><strong id="statMap">–</strong><span>Mapping-Zeilen</span></div>
+        </div>
+        <p class="footer-note">Hover über die Bewertungs-Pills zeigt die Schwellenwerte. GitHub-Pages-/PWA-tauglich.</p>
+      </aside>
+    </section>
+
+    <section class="grid">
+      <div class="card panel">
+        <h2>Eingabe</h2>
+        <div class="field">
+          <label class="req" for="projectName">Projektname</label>
+          <textarea id="projectName" placeholder="z. B. Werkserweiterung Halbleiterproduktion"></textarea>
+          <div class="help">Freitext – Projekt-/Maßnahmenbeschreibung. Platzhalter sind nur Beispiele.</div>
+        </div>
+        <div class="field">
+          <label for="endCustomer">Endkunde</label>
+          <input id="endCustomer" type="text" placeholder="z. B. Chip AG, Universitätsmedizin Mainz, Pfizer">
+        </div>
+        <div class="field">
+          <label for="contractingParty">Auftraggeber</label>
+          <input id="contractingParty" type="text" placeholder="optional – falls abweichend vom Endkunden">
+        </div>
+        <div class="actions">
+          <button type="button" class="primary" id="btnRun">SISIC zuordnen</button>
+          <button type="button" class="secondary" id="btnDemoSemi">Demo Halbleiter</button>
+          <button type="button" class="secondary" id="btnDemoUni">Demo UniMed</button>
+          <button type="button" class="secondary" id="btnReset">Zurücksetzen</button>
+        </div>
+        <div class="pill-row">
+          <div class="pill"><strong>Zuverlässigkeit</strong> numerisch (0–1)</div>
+          <div class="pill"><strong>Bewertung</strong> mit Hover-Erklärung</div>
+          <div class="pill"><strong>Output</strong> SISIC · Begründung · Alternativen · Vertical</div>
+        </div>
+      </div>
+
+      <div class="card panel" id="resultPanel">
+        <div id="emptyState" class="empty">
+          <div>
+            <h2 style="margin:0 0 8px;color:var(--teal-800)">Bereit für die Zuordnung</h2>
+            <p style="margin:0;max-width:34ch">Gib Projektname, Endkunde und optional den Auftraggeber ein. Die Zuordnung läuft lokal im Browser.</p>
+          </div>
+        </div>
+
+        <div id="resultContent" hidden>
+          <div class="results-head">
+            <div>
+              <div class="code" id="outCode">—</div>
+              <div class="vertical" id="outVertical">Kein Vertical ermittelt</div>
+            </div>
+            <div class="reliability-card">
+              <div class="rel-top">
+                <span>Zuverlässigkeit</span>
+                <strong id="outConfidence">0.00</strong>
+              </div>
+              <div class="score-bar"><span id="outBar" style="width:0%"></span></div>
+              <div style="margin-top:12px"><span id="outLabel" class="label-badge label--unsicher" title="Kein Treffer">KEIN TREFFER</span></div>
+              <div class="legend">
+                <div class="pill" title="Wert ≥ 0,90">SEHR SICHER</div>
+                <div class="pill" title="Wert ≥ 0,80">SICHER</div>
+                <div class="pill" title="Wert ≥ 0,70 und < 0,80">PRÜFEN</div>
+                <div class="pill" title="Wert > 0 und < 0,70">UNSICHER</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-section summary-box">
+            <h3>Sales Summary</h3>
+            <p id="salesSummary" class="summary-text">—</p>
+            <div class="summary-actions">
+              <button type="button" class="ghost" id="btnCopySummary">Zusammenfassung kopieren</button>
+              <button type="button" class="ghost" id="btnCopyCode">SISIC kopieren</button>
+            </div>
+          </div>
+
+          <div class="result-section">
+            <h3>Begründung</h3>
+            <p id="outReason">—</p>
+          </div>
+
+          <div class="result-section">
+            <h3>Eingabekontext</h3>
+            <p id="outInput" class="muted">—</p>
+          </div>
+
+          <div class="result-section">
+            <h3>Alternativen</h3>
+            <div class="alt-list" id="altList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast">Kopiert</div>
+
+  <script src="data.js"></script>
+  <script src="engine.js"></script>
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    const el = {
+      systemStatus: $('#systemStatus'),
+      statKeywords: $('#statKeywords'),
+      statAliases: $('#statAliases'),
+      statFallback: $('#statFallback'),
+      statMap: $('#statMap'),
+      projectName: $('#projectName'),
+      endCustomer: $('#endCustomer'),
+      contractingParty: $('#contractingParty'),
+      emptyState: $('#emptyState'),
+      resultContent: $('#resultContent'),
+      outCode: $('#outCode'),
+      outVertical: $('#outVertical'),
+      outConfidence: $('#outConfidence'),
+      outBar: $('#outBar'),
+      outLabel: $('#outLabel'),
+      salesSummary: $('#salesSummary'),
+      outReason: $('#outReason'),
+      outInput: $('#outInput'),
+      altList: $('#altList'),
+      toast: $('#toast')
+    };
+
+    let lastResult = null;
+
+    function showToast(text){
+      el.toast.textContent = text;
+      el.toast.classList.add('show');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => el.toast.classList.remove('show'), 1800);
+    }
+
+    function formatConf(v){
+      const n = Number(v || 0);
+      return Number.isFinite(n) ? n.toFixed(2) : '0.00';
+    }
+
+    function labelClass(label){
+      const x = String(label || '').toUpperCase();
+      if (x.includes('SEHR')) return 'label--sehr';
+      if (x.includes('SICHER') && !x.includes('UNSICHER')) return 'label--sicher';
+      if (x.includes('PRÜF')) return 'label--pruefen';
+      return 'label--unsicher';
+    }
+
+    function labelTooltip(label){
+      const x = String(label || '').toUpperCase();
+      if (x === 'SEHR SICHER') return 'Zuverlässigkeit ≥ 0,90';
+      if (x === 'SICHER') return 'Zuverlässigkeit ≥ 0,80';
+      if (x === 'PRÜFEN') return 'Zuverlässigkeit ≥ 0,70 und < 0,80';
+      if (x === 'UNSICHER') return 'Zuverlässigkeit > 0 und < 0,70';
+      return 'Kein Treffer';
+    }
+
+    function renderAlt(code, reason){
+      if (!code && !reason) return '';
+      return `<article class="alt"><div class="alt-code">${code || '—'}</div><div style="margin-top:6px;line-height:1.5">${reason || '<span class="muted">Keine Detailbegründung vorhanden.</span>'}</div></article>`;
+    }
+
+    function safeLen(arr){
+      return Array.isArray(arr) ? arr.length : '–';
+    }
+
+    function updateStatus(){
+      const dataOk = !!window.SISIC_DATA;
+      const engineOk = !!window.SISICEngine && typeof window.SISICEngine.computeRow === 'function';
+
+      if (!dataOk) {
+        el.systemStatus.textContent = '❌ Datenbasis nicht geladen';
+        el.systemStatus.className = 'status-pill status-err';
+        return;
+      }
+      if (!engineOk) {
+        el.systemStatus.textContent = '❌ Engine nicht geladen';
+        el.systemStatus.className = 'status-pill status-err';
+        return;
+      }
+
+      el.systemStatus.textContent = '✅ System bereit';
+      el.systemStatus.className = 'status-pill status-ok';
+
+      el.statKeywords.textContent = (SISIC_DATA.meta && SISIC_DATA.meta.counts && SISIC_DATA.meta.counts.keywords) ?? safeLen(SISIC_DATA.keywords);
+      el.statAliases.textContent = (SISIC_DATA.meta && SISIC_DATA.meta.counts && SISIC_DATA.meta.counts.aliases) ?? safeLen(SISIC_DATA.aliases);
+      el.statFallback.textContent = (SISIC_DATA.meta && SISIC_DATA.meta.counts && SISIC_DATA.meta.counts.fallbackKw) ?? safeLen(SISIC_DATA.fallbackKw);
+      el.statMap.textContent = (SISIC_DATA.meta && SISIC_DATA.meta.counts && SISIC_DATA.meta.counts.mapping) ?? safeLen(SISIC_DATA.mapping);
+    }
+
+    function buildSalesSummary(r, projectName, endCustomer, contractingParty){
+      const parts = [];
+      parts.push(`SISIC ${r.sisic || '—'}`);
+      if (r.vertical) parts.push(`Vertical ${r.vertical}`);
+      if (r.label) parts.push(`Bewertung ${r.label}`);
+      if (Number.isFinite(Number(r.confidence))) parts.push(`Zuverlässigkeit ${formatConf(r.confidence)}`);
+      if (r.reason) parts.push(`Begründung: ${r.reason}`);
+      const basis = parts.join(' | ');
+      const ctx = [projectName ? `Projektname: ${projectName}` : null, endCustomer ? `Endkunde: ${endCustomer}` : null, contractingParty ? `Auftraggeber: ${contractingParty}` : null].filter(Boolean).join(' · ');
+      return ctx ? `${basis} | ${ctx}` : basis;
+    }
+
+    function run(){
+      if (!window.SISICEngine || typeof SISICEngine.computeRow !== 'function') {
+        updateStatus();
+        return;
+      }
+      const projectName = el.projectName.value.trim();
+      const endCustomer = el.endCustomer.value.trim();
+      const contractingParty = el.contractingParty.value.trim();
+      const result = SISICEngine.computeRow(projectName, endCustomer, contractingParty);
+      lastResult = result;
+
+      el.emptyState.hidden = true;
+      el.resultContent.hidden = false;
+
+      el.outCode.textContent = result.sisic || '—';
+      el.outVertical.textContent = result.vertical ? `Vertical: ${result.vertical}` : 'Kein Vertical ermittelt';
+      el.outConfidence.textContent = formatConf(result.confidence);
+      el.outBar.style.width = `${Math.max(0, Math.min(100, Number(result.confidence || 0) * 100))}%`;
+      el.outLabel.textContent = result.label || 'KEIN TREFFER';
+      el.outLabel.className = `label-badge ${labelClass(result.label)}`;
+      el.outLabel.title = labelTooltip(result.label);
+
+      el.salesSummary.textContent = buildSalesSummary(result, projectName, endCustomer, contractingParty);
+      el.outReason.textContent = result.reason || 'Keine Begründung verfügbar.';
+      el.outInput.textContent = [
+        projectName ? `Projektname: ${projectName}` : null,
+        endCustomer ? `Endkunde: ${endCustomer}` : null,
+        contractingParty ? `Auftraggeber: ${contractingParty}` : null
+      ].filter(Boolean).join(' · ') || 'Keine Eingaben vorhanden';
+
+      const altHtml = [
+        renderAlt(result.alt1Code, result.alt1Reason),
+        renderAlt(result.alt2Code, result.alt2Reason)
+      ].filter(Boolean).join('');
+      el.altList.innerHTML = altHtml || '<div class="muted">Keine Alternativen gefunden.</div>';
+    }
+
+    async function copyText(text, successLabel){
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast(successLabel || 'Kopiert');
+      } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        showToast(successLabel || 'Kopiert');
+      }
+    }
+
+    function loadDemoSemi(){
+      el.projectName.value = 'Werkserweiterung Halbleiterproduktion';
+      el.endCustomer.value = 'Chip AG';
+      el.contractingParty.value = '';
+      run();
+    }
+
+    function loadDemoUni(){
+      el.projectName.value = 'Universitätsmedizin Mainz';
+      el.endCustomer.value = '';
+      el.contractingParty.value = '';
+      run();
+    }
+
+    function resetForm(){
+      el.projectName.value = '';
+      el.endCustomer.value = '';
+      el.contractingParty.value = '';
+      lastResult = null;
+      el.emptyState.hidden = false;
+      el.resultContent.hidden = true;
+    }
+
+    $('#btnRun').addEventListener('click', run);
+    $('#btnDemoSemi').addEventListener('click', loadDemoSemi);
+    $('#btnDemoUni').addEventListener('click', loadDemoUni);
+    $('#btnReset').addEventListener('click', resetForm);
+    $('#btnCopySummary').addEventListener('click', () => copyText(el.salesSummary.textContent, 'Zusammenfassung kopiert'));
+    $('#btnCopyCode').addEventListener('click', () => copyText(lastResult && lastResult.sisic ? String(lastResult.sisic) : el.outCode.textContent, 'SISIC kopiert'));
+
+    window.addEventListener('load', () => {
+      setTimeout(updateStatus, 80);
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+      }
+    });
+  </script>
+</body>
+</html>
