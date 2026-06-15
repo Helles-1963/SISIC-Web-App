@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISIC Agent Web-App</title>
+
+<style>
+:root{
+  --teal:#00646e;
+  --teal-dark:#004f55;
+  --bg:#f4f8f9;
+  --card:#ffffff;
+  --line:#c7e5e7;
+  --text:#102a2e;
+  --muted:#59777c;
+  --success:#0f7b47;
+}
+body{
+  margin:0;
+  font-family:Segoe UI,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+.container{
+  max-width:1150px;
+  margin:auto;
+  padding:25px;
+}
+.card{
+  background:var(--card);
+  border-radius:18px;
+  padding:20px;
+  margin-bottom:20px;
+  border:1px solid var(--line);
+  box-shadow:0 8px 20px rgba(0,0,0,0.04);
+}
+.hero{
+  background:linear-gradient(135deg,var(--teal-dark),var(--teal));
+  color:white;
+}
+h1{margin:0;}
+h2{margin-top:0;}
+input,textarea{
+  width:100%;
+  padding:12px;
+  margin-top:5px;
+  margin-bottom:12px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  box-sizing:border-box;
+  font:inherit;
+}
+textarea::placeholder{opacity:0.5; font-style:italic;}
+button{
+  padding:12px 16px;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  font-weight:bold;
+}
+.primary{background:var(--teal);color:white;}
+.secondary{background:#eee;color:var(--text);}
+.ghost{background:#eef8fb;color:var(--teal-dark);}
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+}
+.big{
+  font-size:36px;
+  font-weight:bold;
+}
+.bar{
+  height:10px;
+  background:#ddd;
+  border-radius:8px;
+  overflow:hidden;
+}
+.bar span{
+  display:block;
+  height:100%;
+  background:var(--teal);
+}
+.badge{
+  display:inline-block;
+  margin-top:6px;
+  padding:6px 10px;
+  border-radius:20px;
+  background:#e0f3f5;
+  font-size:12px;
+}
+.alt{
+  background:#eef8fb;
+  padding:10px;
+  border-radius:10px;
+  margin-top:8px;
+}
+.status{font-size:13px; margin-top:8px;}
+.copy-btn{margin-top:10px;}
+.summary{
+  margin-top:14px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fafdfd;
+}
+.summary-title{
+  font-weight:bold;
+  margin-bottom:6px;
+}
+.summary-text{
+  white-space:pre-line;
+  color:var(--text);
+}
+.help{
+  margin-top:8px;
+  font-size:12px;
+  color:var(--muted);
+}
+.toast{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  background:var(--success);
+  color:#fff;
+  padding:10px 14px;
+  border-radius:12px;
+  box-shadow:0 8px 20px rgba(0,0,0,0.15);
+  opacity:0;
+  transform:translateY(8px);
+  pointer-events:none;
+  transition:opacity .18s ease, transform .18s ease;
+}
+.toast.show{
+  opacity:1;
+  transform:translateY(0);
+}
+@media (max-width: 900px){
+  .grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card hero">
+<h1>SISIC Agent Web-App</h1>
+<div id="status" class="status">System wird geprüft...</div>
+</div>
+
+<div class="grid">
+
+<div class="card">
+<h2>Eingabe</h2>
+
+<label>Projektname</label>
+<textarea id="p" placeholder="z. B. Neubau Data Center Frankfurt"></textarea>
+
+<label>Endkunde</label>
+<input id="c">
+
+<label>Auftraggeber</label>
+<input id="cp">
+
+<button class="primary" onclick="run()">SISIC zuordnen</button>
+<button class="secondary" onclick="demo()">Demo</button>
+<button class="secondary" onclick="resetForm()">Reset</button>
+
+<div class="help">Luxusmodus: <strong>Enter</strong> startet die Zuordnung, <strong>Shift + Enter</strong> erzeugt im Projektfeld einen Zeilenumbruch.</div>
+</div>
+
+<div class="card">
+<h2>Ergebnis</h2>
+
+<div class="big" id="sisic">—</div>
+<div id="vertical">—</div>
+
+<div style="margin-top:10px">
+Zuverlässigkeit: <b id="conf">0.00</b>
+<div class="bar"><span id="bar" style="width:0%"></span></div>
+
+<div class="badge" id="label">KEIN TREFFER</div>
+</div>
+
+<p><b>Begründung:</b><br><span id="reason">—</span></p>
+
+<div class="summary">
+  <div class="summary-title">Mini-Sales-Satz</div>
+  <div class="summary-text" id="salesSummary">Noch kein Ergebnis vorhanden.</div>
+</div>
+
+<p><b>Alternativen:</b></p>
+<div id="alts"></div>
+
+<button class="secondary copy-btn" onclick="copyResult()">📋 Ergebnis kopieren</button>
+<button class="ghost copy-btn" onclick="copyCode()">🔢 Nur SISIC kopieren</button>
+
+</div>
+
+</div>
+
+</div>
+
+<div id="toast" class="toast">Kopiert</div>
+
+<script src="data.js"></script>
+<script src="engine.js"></script>
+
+<script>
+let lastResultText = "";
+let lastResultCode = "";
+
+function updateStatus(){
+  const hasData = typeof SISIC_DATA !== "undefined";
+  const hasEngine = typeof SISICEngine !== "undefined";
+
+  if(hasData && hasEngine){
+    status.textContent = "✅ System bereit";
+  } else if(!hasData){
+    status.textContent = "❌ Datenbasis fehlt";
+  } else {
+    status.textContent = "❌ Engine fehlt";
+  }
+}
+
+window.addEventListener("load", updateStatus);
+
+function getTooltip(label){
+  switch(label){
+    case "SEHR SICHER": return "Zuverlässigkeit ≥ 0,90";
+    case "SICHER": return "Zuverlässigkeit ≥ 0,80";
+    case "PRÜFEN": return "Zuverlässigkeit ≥ 0,70";
+    case "UNSICHER": return "Zuverlässigkeit < 0,70";
+    default: return "";
+  }
+}
+
+function buildSalesText(){
+  return "SISIC " + (sisic.textContent || "—") + " – " +
+         (vertical.textContent || "—") + " | " +
+         (label.textContent || "—") + " (" + (conf.textContent || "0.00") + ")" +
+         "
+→ " + (reason.textContent || "—");
+}
+
+function run(){
+  let r = SISICEngine.computeRow(p.value,c.value,cp.value);
+
+  sisic.textContent = r.sisic || "—";
+  vertical.textContent = r.vertical || "—";
+
+  conf.textContent = r.confidence.toFixed(2);
+  bar.style.width = (r.confidence*100)+"%";
+
+  label.textContent = r.label;
+  label.title = getTooltip(r.label);
+
+  reason.textContent = r.reason || "—";
+
+  let html = "";
+  if(r.alt1Code)
+    html += `<div class="alt">${r.alt1Code} – ${r.alt1Reason}</div>`;
+  if(r.alt2Code)
+    html += `<div class="alt">${r.alt2Code} – ${r.alt2Reason}</div>`;
+
+  alts.innerHTML = html || "Keine Alternativen";
+
+  lastResultText = buildSalesText();
+  lastResultCode = r.sisic || "";
+  salesSummary.textContent = lastResultText;
+}
+
+function demo(){
+  p.value = "Werkserweiterung Halbleiterproduktion";
+  c.value = "Chip AG";
+  cp.value = "";
+  run();
+}
+
+function resetForm(){
+  p.value="";
+  c.value="";
+  cp.value="";
+  sisic.textContent = "—";
+  vertical.textContent = "—";
+  conf.textContent = "0.00";
+  bar.style.width = "0%";
+  label.textContent = "KEIN TREFFER";
+  label.title = "";
+  reason.textContent = "—";
+  alts.innerHTML = "";
+  salesSummary.textContent = "Noch kein Ergebnis vorhanden.";
+  lastResultText = "";
+  lastResultCode = "";
+}
+
+function showToast(text){
+  toast.textContent = text;
+  toast.classList.add("show");
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function(){
+    toast.classList.remove("show");
+  }, 1500);
+}
+
+async function copyResult(){
+  if(!lastResultText){
+    alert("Bitte zuerst ein Ergebnis berechnen");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(lastResultText);
+    showToast("Ergebnis kopiert");
+  } catch(e) {
+    alert("Kopieren leider nicht möglich");
+  }
+}
+
+async function copyCode(){
+  if(!lastResultCode){
+    alert("Bitte zuerst ein Ergebnis berechnen");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(lastResultCode);
+    showToast("SISIC kopiert");
+  } catch(e) {
+    alert("Kopieren leider nicht möglich");
+  }
+}
+
+// Luxusmodus: Enter = Run, Shift+Enter = Zeilenumbruch im Textarea
+
+document.addEventListener("keydown", function(e){
+  if(e.key !== "Enter") return;
+
+  const isTextarea = document.activeElement && document.activeElement.tagName === "TEXTAREA";
+
+  if(isTextarea && e.shiftKey){
+    return; // Zeilenumbruch zulassen
+  }
+
+  e.preventDefault();
+  run();
+});
+
+</script>
+
+</body>
+</html>
