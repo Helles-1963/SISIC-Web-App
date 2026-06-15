@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISIC Agent Web-App</title>
+
+<style>
+body {
+  margin:0;
+  font-family:Segoe UI,Arial,sans-serif;
+  background:#f4f8f9;
+}
+.container {
+  max-width:1100px;
+  margin:auto;
+  padding:20px;
+}
+.card {
+  background:#fff;
+  padding:20px;
+  margin-bottom:20px;
+  border-radius:16px;
+}
+.hero {
+  background:#0a5d63;
+  color:white;
+}
+textarea, input {
+  width:100%;
+  padding:10px;
+  margin:6px 0 12px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+button {
+  padding:10px 14px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+}
+.primary { background:#0a5d63; color:white; }
+.secondary { background:#eee; }
+
+.big { font-size:32px; font-weight:bold; }
+
+.bar {
+  height:10px;
+  background:#eee;
+  border-radius:6px;
+  overflow:hidden;
+}
+.bar span {
+  display:block;
+  height:100%;
+  background:#0a5d63;
+}
+.badge {
+  display:inline-block;
+  padding:5px 10px;
+  border-radius:20px;
+  margin-top:5px;
+  background:#e0f3f5;
+}
+.alt {
+  background:#eef8fb;
+  padding:8px;
+  border-radius:8px;
+  margin-top:5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card hero">
+<h1>SISIC Agent Web-App</h1>
+<div id="status">System wird geprüft…</div>
+</div>
+
+<div class="card">
+<h2>Eingabe</h2>
+
+<label>Projektname</label>
+<textarea id="p"></textarea>
+
+<label>Endkunde</label>
+<input id="c">
+
+<label>Auftraggeber</label>
+<input id="cp">
+
+<button class="primary" onclick="run()">SISIC zuordnen</button>
+<button class="secondary" onclick="demo()">Demo</button>
+<button class="secondary" onclick="resetForm()">Reset</button>
+
+</div>
+
+<div class="card">
+<h2>Ergebnis</h2>
+
+<div class="big" id="code">—</div>
+<div id="vertical">—</div>
+
+<div>
+Zuverlässigkeit: <b id="conf">0.00</b>
+<div class="bar"><span id="bar"></span></div>
+<div id="label" class="badge">KEIN TREFFER</div>
+</div>
+
+<p><b>Begründung:</b><br><span id="reason">—</span></p>
+<p><b>Alternativen:</b><div id="alts"></div></p>
+
+</div>
+
+</div>
+
+<script src="data.js"></script>
+<script src="engine.js"></script>
+
+<script>
+
+function safeLen(x){
+  return Array.isArray(x) ? x.length : 0;
+}
+
+function updateStatus(){
+
+  const hasData = typeof SISIC_DATA !== "undefined";
+  const hasEngine = typeof SISICEngine !== "undefined";
+
+  if(!hasData){
+    status.textContent = "❌ data.js fehlt";
+    return;
+  }
+  if(!hasEngine){
+    status.textContent = "❌ engine.js fehlt";
+    return;
+  }
+
+  status.textContent =
+    "✅ System bereit (" +
+    safeLen(SISIC_DATA.keywords) + " Keywords, " +
+    safeLen(SISIC_DATA.aliases) + " Aliases)";
+}
+
+window.addEventListener("load", () => {
+  setTimeout(updateStatus, 50);
+});
+
+function run(){
+
+  if(typeof SISICEngine === "undefined"){
+    alert("Engine nicht geladen");
+    return;
+  }
+
+  const r = SISICEngine.computeRow(p.value,c.value,cp.value);
+
+  code.textContent = r.sisic || "—";
+  vertical.textContent = r.vertical || "—";
+
+  conf.textContent = Number(r.confidence || 0).toFixed(2);
+  bar.style.width = (r.confidence*100)+"%";
+
+  label.textContent = r.label;
+  label.title = getTooltip(r.label);
+
+  reason.textContent = r.reason || "—";
+
+  let html = "";
+  if(r.alt1Code){
+    html += `<div class="alt">${r.alt1Code} – ${r.alt1Reason}</div>`;
+  }
+  if(r.alt2Code){
+    html += `<div class="alt">${r.alt2Code} – ${r.alt2Reason}</div>`;
+  }
+
+  alts.innerHTML = html || "Keine Alternativen";
+
+}
+
+function getTooltip(label){
+  switch(label){
+    case "SEHR SICHER": return "≥ 0,90";
+    case "SICHER": return "≥ 0,80";
+    case "PRÜFEN": return "≥ 0,70";
+    case "UNSICHER": return "< 0,70";
+    default: return "";
+  }
+}
+
+function demo(){
+  p.value = "Werkserweiterung Halbleiterproduktion";
+  c.value = "Chip AG";
+  run();
+}
+
+function resetForm(){
+  p.value=""; c.value=""; cp.value="";
+}
+
+</script>
+
+</body>
+</html>
