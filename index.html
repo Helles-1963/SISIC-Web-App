@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISIC Agent Web-App</title>
+
+<style>
+:root{
+  --teal:#00646e;
+  --bg:#f4f8f9;
+  --card:#ffffff;
+  --line:#c7e5e7;
+  --text:#102a2e;
+}
+body{
+  margin:0;
+  font-family:Segoe UI,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+.container{
+  max-width:1150px;
+  margin:auto;
+  padding:25px;
+}
+.card{
+  background:var(--card);
+  border-radius:18px;
+  padding:20px;
+  margin-bottom:20px;
+  border:1px solid var(--line);
+}
+.hero{
+  background:linear-gradient(135deg,#004f55,var(--teal));
+  color:white;
+}
+h1{margin:0;}
+h2{margin-top:0;}
+
+input,textarea{
+  width:100%;
+  padding:12px;
+  margin-top:5px;
+  margin-bottom:12px;
+  border-radius:10px;
+  border:1px solid var(--line);
+}
+
+button{
+  padding:12px 16px;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.primary{background:var(--teal);color:white;}
+.secondary{background:#eee;}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+}
+
+.big{
+  font-size:36px;
+  font-weight:bold;
+}
+
+.bar{
+  height:10px;
+  background:#ddd;
+  border-radius:8px;
+  overflow:hidden;
+}
+.bar span{
+  display:block;
+  height:100%;
+  background:var(--teal);
+}
+
+.badge{
+  display:inline-block;
+  margin-top:6px;
+  padding:6px 10px;
+  border-radius:20px;
+  background:#e0f3f5;
+  font-size:12px;
+}
+
+.alt{
+  background:#eef8fb;
+  padding:10px;
+  border-radius:10px;
+  margin-top:8px;
+}
+
+.status{
+  font-size:13px;
+  margin-top:8px;
+}
+
+.copy-btn{
+  margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card hero">
+<h1>SISIC Agent Web-App</h1>
+<div id="status" class="status">System wird geprüft...</div>
+</div>
+
+<div class="grid">
+
+<div class="card">
+<h2>Eingabe</h2>
+
+<label>Projektname</label>
+<textarea id="p"></textarea>
+
+<label>Endkunde</label>
+<input id="c">
+
+<label>Auftraggeber</label>
+<input id="cp">
+
+<button class="primary" onclick="run()">SISIC zuordnen</button>
+<button class="secondary" onclick="demo()">Demo</button>
+<button class="secondary" onclick="resetForm()">Reset</button>
+
+</div>
+
+<div class="card">
+<h2>Ergebnis</h2>
+
+<div class="big" id="sisic">—</div>
+<div id="vertical">—</div>
+
+<div style="margin-top:10px">
+Zuverlässigkeit: <b id="conf">0.00</b>
+<div class="bar"><span id="bar"></span></div>
+<div class="badge" id="label">KEIN TREFFER</div>
+</div>
+
+<p><b>Begründung:</b><br><span id="reason">—</span></p>
+
+<p><b>Alternativen:</b></p>
+<div id="alts"></div>
+
+<button class="secondary copy-btn" onclick="copyResult()">📋 Ergebnis kopieren</button>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="data.js"></script>
+<script src="engine.js"></script>
+
+<script>
+
+let lastResultText = "";
+
+// ✅ STATUS
+function updateStatus(){
+  const hasData = typeof SISIC_DATA !== "undefined";
+  const hasEngine = typeof SISICEngine !== "undefined";
+
+  if(hasData && hasEngine){
+    status.textContent = "✅ System bereit";
+  } else if(!hasData){
+    status.textContent = "❌ Datenbasis fehlt";
+  } else {
+    status.textContent = "❌ Engine fehlt";
+  }
+}
+
+window.onload = function(){
+
+  updateStatus();
+
+  // ✅ ENTER FIX (100% stabil jetzt)
+  document.getElementById("c").addEventListener("keydown", function(e){
+    if(e.key === "Enter"){
+      e.preventDefault();
+      run();
+    }
+  });
+
+  document.getElementById("cp").addEventListener("keydown", function(e){
+    if(e.key === "Enter"){
+      e.preventDefault();
+      run();
+    }
+  });
+
+};
+
+// ✅ MAIN
+function run(){
+
+  let r = SISICEngine.computeRow(p.value,c.value,cp.value);
+
+  sisic.textContent = r.sisic || "—";
+  vertical.textContent = r.vertical || "—";
+
+  conf.textContent = r.confidence.toFixed(2);
+  bar.style.width = (r.confidence*100)+"%";
+
+  label.textContent = r.label;
+  reason.textContent = r.reason || "—";
+
+  let html = "";
+  if(r.alt1Code)
+    html += `<div class="alt">${r.alt1Code} – ${r.alt1Reason}</div>`;
+  if(r.alt2Code)
+    html += `<div class="alt">${r.alt2Code} – ${r.alt2Reason}</div>`;
+
+  alts.innerHTML = html || "Keine Alternativen";
+
+  lastResultText =
+    "SISIC " + sisic.textContent + " – " +
+    vertical.textContent + " | " +
+    label.textContent + " (" + conf.textContent + ")" +
+    "\n→ " + reason.textContent;
+
+  // ✅ Status wird überschrieben → dein „hängendes“ Problem gelöst
+  status.textContent = "✅ Ergebnis berechnet";
+}
+
+// ✅ COPY
+function copyResult(){
+  if(!lastResultText){
+    alert("Bitte zuerst ein Ergebnis berechnen");
+    return;
+  }
+  navigator.clipboard.writeText(lastResultText);
+}
+
+// ✅ Demo & Reset
+function demo(){
+  p.value = "Werkserweiterung Halbleiterproduktion";
+  c.value = "Chip AG";
+  run();
+}
+
+function resetForm(){
+  p.value="";
+  c.value="";
+  cp.value="";
+}
+
+</script>
+
+</body>
+</html>
